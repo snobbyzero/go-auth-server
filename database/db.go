@@ -1,23 +1,41 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
+	"github.com/jackc/pgx"
+	_ "github.com/lib/pq"
 	"go_auth_server/config"
+	"os"
 )
 
 
-var db *sql.DB
+var conn *pgx.Conn
 
-func GetDB() (*sql.DB, error) {
+func GetDB() (*pgx.Conn, error) {
 	var err error
-	if db == nil {
-		db, err = sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+
-			"password=%s dbname=%s sslmode=disable",
-			config.Host, config.Port, config.User, config.Password, config.Dbname)) // create config/db_config.go file with these constants
+	if conn == nil {
+		conn, err = pgx.Connect(pgx.ConnConfig{
+			Host: config.Host,
+			Port: config.Port,
+			User: config.User,
+			Password: config.Password,
+			Database: config.Dbname,
+		}) // create config/db_config.go file with these constants
 		if err != nil {
 			return nil, err
 		}
 	}
-	return db, nil
+	return conn, nil
+}
+
+func CreateTables() error {
+	conn, err := GetDB()
+	query, err := os.ReadFile("./config/table.sql")
+	if err != nil {
+		return err
+	}
+	_, err = conn.Exec(string(query))
+	if err != nil {
+		return err
+	}
+	return nil
 }
