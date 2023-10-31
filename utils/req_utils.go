@@ -7,11 +7,10 @@ import (
 )
 
 // TODO doesnt work
-func GetObjectFromJson(obj interface{}, body io.ReadCloser) error {
+func Unmarshal(obj interface{}, body io.ReadCloser) error {
 	decoder := json.NewDecoder(body)
 	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&obj)
-	if err != nil {
+	if err := decoder.Decode(obj); err != nil {
 		log.Println(err)
 		return err
 	}

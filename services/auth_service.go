@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"github.com/jackc/pgx"
 	"go_auth_server/repositories"
 )
 
@@ -16,6 +18,9 @@ func NewAuthService() *AuthService {
 func (as *AuthService) Auth(email, password string) (bool, error) {
 	user, err := as.userRepository.GetUserByEmail(email)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
 		return false, err
 	}
 	if user.Password == password {
