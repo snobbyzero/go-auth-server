@@ -34,5 +34,5 @@ func getValidatorByField(tag string) Validator {
 	case "string":
 		return NewStringValidator(args)
 	}
-	return NewDefaultValidator(args)
+	return NewDefaultValidator()
 }

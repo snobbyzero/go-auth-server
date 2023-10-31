@@ -4,7 +4,7 @@ type DefaultValidator struct {
 
 }
 
-func NewDefaultValidator(args []string) DefaultValidator  {
+func NewDefaultValidator() DefaultValidator  {
 	return DefaultValidator{}
 }
 
