@@ -1,9 +1,11 @@
 package services
 
 import (
+	"context"
 	"errors"
-	"github.com/jackc/pgx"
 	"go_auth_server/repositories"
+
+	"github.com/jackc/pgx"
 )
 
 type AuthService struct {
@@ -14,8 +16,7 @@ func NewAuthService() *AuthService {
 	return &AuthService{repositories.NewUserRepository()}
 }
 
-
-func (as *AuthService) Auth(email, password string) (bool, error) {
+func (as *AuthService) Auth(ctx context.Context, email string, password string) (bool, error) {
 	user, err := as.userRepository.GetUserByEmail(email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -29,8 +30,10 @@ func (as *AuthService) Auth(email, password string) (bool, error) {
 	return false, nil
 }
 
-func (as *AuthService) Register(email, username, password string) (string, error) {
+func (as *AuthService) Register(ctx context.Context, email string, username string, password string) (string, error) {
 	res, err := as.userRepository.CreateUser(email, username, password)
-
-	return res, err
+	if res != "" {
+		return "OK", nil
+	}
+	return "", err
 }

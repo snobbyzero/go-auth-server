@@ -6,7 +6,6 @@ import (
 	"log"
 )
 
-// TODO doesnt work
 func Unmarshal(obj interface{}, body io.ReadCloser) error {
 	decoder := json.NewDecoder(body)
 	decoder.DisallowUnknownFields()

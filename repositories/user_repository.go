@@ -1,11 +1,12 @@
 package repositories
 
 import (
-	"github.com/jackc/pgx"
 	"go_auth_server/database"
 	"go_auth_server/database/models"
 	"log"
 	"time"
+
+	"github.com/jackc/pgx"
 )
 
 type UserRepository struct {
@@ -13,7 +14,7 @@ type UserRepository struct {
 }
 
 func NewUserRepository() *UserRepository {
-	conn, err := database.GetDB()
+	conn, err := database.ConnectDB()
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -3,10 +3,14 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go_auth_server/services"
 	"go_auth_server/utils"
 	"log"
 	"net/http"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx"
 )
 
 type AuthController struct {
@@ -19,7 +23,7 @@ func NewAuthController() *AuthController {
 
 func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
-		Email *string `json:"email"`
+		Email    *string `json:"email"`
 		Password *string `json:"password"`
 	}{}
 
@@ -28,14 +32,8 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	/*decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&user)
-	if err != nil {
-		log.Println(err)
-	}*/
 
-	res, err := authController.authService.Auth(*user.Email, *user.Password)
+	res, err := authController.authService.Auth(r.Context(), *user.Email, *user.Password)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -54,7 +52,7 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 // RegisterHandler TODO
 func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
-		Email *string `json:"email" validate:"string,required,min=5,max=100"`
+		Email    *string `json:"email" validate:"string,required,min=5,max=100"`
 		Username *string `json:"username" validate:"string,required,min=5,max=100"`
 		Password *string `json:"password" validate:"string,required,min=5,max=100"`
 	}{}
@@ -64,21 +62,32 @@ func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	/*decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&user)
-	if err != nil {
-		log.Println(err)
-	}*/
+
 	if errs := utils.Validate(user); len(errs) > 0 {
 		http.Error(w, errors.Join(errs...).Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res, err := authController.authService.Register(*user.Email, *user.Username, *user.Password)
+	res, err := authController.authService.Register(r.Context(), *user.Email, *user.Username, *user.Password)
 	if err != nil {
+		var pgErr pgx.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			var field string
+			switch pgErr.ConstraintName {
+			case "users_email_key":
+				field = "email"
+			case "users_username_key":
+				field = "username"
+			default:
+				field = pgErr.ConstraintName
+			}
+			log.Println(pgErr)
+			http.Error(w, fmt.Sprintf("User with this %s already exists", field), http.StatusOK)
+
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 

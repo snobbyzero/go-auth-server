@@ -2,24 +2,29 @@ package main
 
 import (
 	"context"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
 	"go_auth_server/controllers"
 	"go_auth_server/database"
 	"go_auth_server/middleware"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	conn, err := database.GetDB()
+	log.Println("Try to connect to DB")
+	conn, err := database.ConnectDB()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = conn.Ping(context.Background())
-	if err != nil {
+	log.Println("Connected to DB")
+	log.Println("Ping DB")
+
+	if err := conn.Ping(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
+
 	if err := database.CreateTables(); err != nil {
 		log.Fatalln(err)
 	}
@@ -34,10 +39,9 @@ func main() {
 
 	router.Use(middleware.Logging, middleware.SetHeaders)
 
+	log.Println("Server is starting...")
 	// TODO Option pattern for http.Server
-	err = http.ListenAndServe(":8081", router)
-
-	if err != nil {
+	if err := http.ListenAndServe(":8081", router); err != nil {
 		log.Fatalln(err)
 	}
 }
