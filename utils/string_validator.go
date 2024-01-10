@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -9,15 +8,15 @@ import (
 
 type StringValidator struct {
 	required bool
-	min int
-	max int
+	min      int
+	max      int
 }
 
 func NewStringValidator(args []string) StringValidator {
 	validator := StringValidator{}
 
 	for i := 1; i < len(args); i++ {
-		if args[i] ==  "required" {
+		if args[i] == "required" {
 			validator.required = true
 		} else if strings.Contains(args[i], "min") {
 			validator.min, _ = strconv.Atoi(args[i][4:])
@@ -35,13 +34,18 @@ func NewStringValidator(args []string) StringValidator {
 func (sv StringValidator) Validate(obj interface{}, fieldName string) error {
 	str := (obj).(*string)
 	if sv.required && (str == nil || *str == "") {
-		return fmt.Errorf("%v shouldn't be empty or null", fieldName)
-	} else if sv.min > len(*str) {
-		return fmt.Errorf("%v should be more than %v", fieldName, sv.min)
-	} else if sv.max < len(*str) {
-		return fmt.Errorf("%v should be less than %v", fieldName, sv.max)
+		if str == nil {
+			return &ValidatorNilError{fieldName: fieldName}
+		} else if *str == "" {
+			return &ValidatorEmptyStringError{fieldName: fieldName}
+		}
+	} else if str != nil && *str != "" {
+		if sv.min >= len(*str) {
+			return &ValidatorMinLengthStringError{fieldName: fieldName, minLength: sv.min}
+		} else if sv.max <= len(*str) {
+			return &ValidatorMaxLengthStringError{fieldName: fieldName, maxLength: sv.max}
+		}
 	}
 
 	return nil
 }
-
