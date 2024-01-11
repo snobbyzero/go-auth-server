@@ -19,7 +19,7 @@ func NewAuthService() *AuthService {
 
 // TODO check hash password
 func (as *AuthService) Auth(ctx context.Context, email string, password string) (bool, error) {
-	user, err := as.userRepository.GetUserByEmail(email)
+	user, err := as.userRepository.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -36,7 +36,7 @@ func (as *AuthService) Register(ctx context.Context, email string, username stri
 	if err != nil {
 		return "", err
 	}
-	res, err := as.userRepository.CreateUser(email, username, hash_password)
+	res, err := as.userRepository.CreateUser(ctx, email, username, hash_password)
 	if res != "" {
 		return "OK", nil
 	}

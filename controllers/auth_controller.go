@@ -22,6 +22,7 @@ func NewAuthController() *AuthController {
 	return &AuthController{services.NewAuthService()}
 }
 
+// TODO create context with timeout
 func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
 		Email    *string `json:"email"`
@@ -50,6 +51,7 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 	return
 }
 
+// TODO create context with timeout
 func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
 		Email    *string `json:"email" validate:"string,required,min=5,max=100"`
