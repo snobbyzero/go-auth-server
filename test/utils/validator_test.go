@@ -2,7 +2,7 @@ package utils_test
 
 import (
 	"errors"
-	"go_auth_server/utils"
+	"go_auth_server/utils/validator"
 	"testing"
 )
 
@@ -11,7 +11,7 @@ func TestUnrequieredNilStringValidation(t *testing.T) {
 		Str *string `validate:"string,min=5,max=100"`
 	}{}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
 	if len(errs) > 0 {
 		t.Fatalf("Unrequired nil string. errors: %v", errs)
@@ -24,7 +24,7 @@ func TestUnrequiredEmptyStringValidation(t *testing.T) {
 		Str *string `validate:"string,min=5,max=100"`
 	}{&empty_str}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
 	if len(errs) > 0 {
 		t.Fatalf("Unrequired empty string. errors: %v", errs)
@@ -36,9 +36,9 @@ func TestRequiredNilStringValidation(t *testing.T) {
 		Str *string `validate:"string,required,min=5,max=100"`
 	}{}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
-	var e *utils.ValidatorNilError
+	var e *validator.ValidatorNilError
 	contains := false
 	for _, err := range errs {
 		if errors.As(err, &e) {
@@ -56,9 +56,9 @@ func TestRequiredEmptyStringValidation(t *testing.T) {
 		Str *string `validate:"string,required,min=5,max=100"`
 	}{&empty_str}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
-	var e *utils.ValidatorEmptyStringError
+	var e *validator.ValidatorEmptyStringError
 	contains := false
 	for _, err := range errs {
 		if errors.As(err, &e) {
@@ -76,9 +76,9 @@ func TestUnrequiredMinLengthStringValidation(t *testing.T) {
 		Str *string `validate:"string,min=5,max=100"`
 	}{&str}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
-	var e *utils.ValidatorMinLengthStringError
+	var e *validator.ValidatorMinLengthStringError
 	contains := false
 	for _, err := range errs {
 		if errors.As(err, &e) {
@@ -96,9 +96,9 @@ func TestUnrequiredMaxLengthStringValidation(t *testing.T) {
 		Str *string `validate:"string,min=1,max=5"`
 	}{&str}
 
-	errs := utils.Validate(s)
+	errs := validator.Validate(s)
 
-	var e *utils.ValidatorMaxLengthStringError
+	var e *validator.ValidatorMaxLengthStringError
 	contains := false
 	for _, err := range errs {
 		if errors.As(err, &e) {

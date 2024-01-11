@@ -1,10 +1,9 @@
-package utils
+package validator
 
 import (
 	"reflect"
 	"strings"
 )
-
 
 func Validate(obj interface{}) []error {
 	var errors []error

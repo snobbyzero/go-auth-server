@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"go_auth_server/repositories"
+	"go_auth_server/utils"
 
 	"github.com/jackc/pgx"
 )
@@ -16,6 +17,7 @@ func NewAuthService() *AuthService {
 	return &AuthService{repositories.NewUserRepository()}
 }
 
+// TODO check hash password
 func (as *AuthService) Auth(ctx context.Context, email string, password string) (bool, error) {
 	user, err := as.userRepository.GetUserByEmail(email)
 	if err != nil {
@@ -24,14 +26,17 @@ func (as *AuthService) Auth(ctx context.Context, email string, password string) 
 		}
 		return false, err
 	}
-	if user.Password == password {
-		return true, nil
-	}
-	return false, nil
+	res := utils.ComparePasswords(password, user.Password)
+	return res, nil
 }
 
+// TODO hash password
 func (as *AuthService) Register(ctx context.Context, email string, username string, password string) (string, error) {
-	res, err := as.userRepository.CreateUser(email, username, password)
+	hash_password, err := utils.HashPassword(password)
+	if err != nil {
+		return "", err
+	}
+	res, err := as.userRepository.CreateUser(email, username, hash_password)
 	if res != "" {
 		return "OK", nil
 	}

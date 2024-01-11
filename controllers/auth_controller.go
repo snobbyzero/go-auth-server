@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go_auth_server/services"
 	"go_auth_server/utils"
+	"go_auth_server/utils/validator"
 	"log"
 	"net/http"
 
@@ -29,7 +30,7 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 
 	// Parse json body
 	if err := utils.Unmarshal(&user, r.Body); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
@@ -49,21 +50,20 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 	return
 }
 
-// RegisterHandler TODO
 func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
 		Email    *string `json:"email" validate:"string,required,min=5,max=100"`
-		Username *string `json:"username" validate:"string,required,min=5,max=100"`
-		Password *string `json:"password" validate:"string,required,min=5,max=100"`
+		Username *string `json:"username" validate:"string,required,min=5,max=50"`
+		Password *string `json:"password" validate:"string,required,min=7,max=50"`
 	}{}
 
 	// Parse json body
 	if err := utils.Unmarshal(&user, r.Body); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	if errs := utils.Validate(user); len(errs) > 0 {
+	if errs := validator.Validate(user); len(errs) > 0 {
 		http.Error(w, errors.Join(errs...).Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,7 +83,6 @@ func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *
 			}
 			log.Println(pgErr)
 			http.Error(w, fmt.Sprintf("User with this %s already exists", field), http.StatusOK)
-
 		} else {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
