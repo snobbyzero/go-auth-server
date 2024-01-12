@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,24 +10,25 @@ import (
 	"go_auth_server/utils/validator"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type AuthController struct {
 	authService *services.AuthService
 }
 
-func NewAuthController() *AuthController {
-	return &AuthController{services.NewAuthService()}
+func NewAuthController(ctx context.Context) *AuthController {
+	return &AuthController{services.NewAuthService(ctx)}
 }
 
 // TODO create context with timeout
 func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	user := struct {
-		Email    *string `json:"email"`
-		Password *string `json:"password"`
+		Email    *string `json:"email" validate:"string,required,min=5,max=100"`
+		Password *string `json:"password" validate:"string,required,min=7,max=50"`
 	}{}
 
 	// Parse json body
@@ -35,7 +37,15 @@ func (authController *AuthController) AuthHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	res, err := authController.authService.Auth(r.Context(), *user.Email, *user.Password)
+	if errs := validator.Validate(user); len(errs) > 0 {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Millisecond)
+	defer cancel()
+
+	res, err := authController.authService.Auth(ctx, *user.Email, *user.Password)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -70,9 +80,12 @@ func (authController *AuthController) RegisterHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	res, err := authController.authService.Register(r.Context(), *user.Email, *user.Username, *user.Password)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	res, err := authController.authService.Register(ctx, *user.Email, *user.Username, *user.Password)
 	if err != nil {
-		var pgErr pgx.PgError
+		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
 			var field string
 			switch pgErr.ConstraintName {

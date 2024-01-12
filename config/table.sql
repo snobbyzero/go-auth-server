@@ -6,3 +6,14 @@ CREATE TABLE IF NOT EXISTS users(
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS refresh_sessions(
+    "id" BIGSERIAL PRIMARY KEY,
+    "user_id" BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    "refresh_token" VARCHAR NOT NULL,
+    "user_agent" VARCHAR NOT NULL,
+    "fingerprint" VARCHAR NOT NULL,
+    "ip" VARCHAR NOT NULL,
+    "expires_in" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL
+)

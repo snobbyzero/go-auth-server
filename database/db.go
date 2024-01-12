@@ -1,39 +1,46 @@
 package database
 
 import (
+	"context"
+	"fmt"
 	"go_auth_server/config"
 	"os"
+	"time"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
 
-var conn *pgx.Conn
+var pool *pgxpool.Pool
 
-func ConnectDB() (*pgx.Conn, error) {
+var URL = fmt.Sprintf("postgres://%s:%s@%s:%d/%s?pool_max_conns=10", config.User, config.Password, config.Host, config.Port, config.Dbname)
+
+func GetDB(ctx context.Context) (*pgxpool.Pool, error) {
 	var err error
-	if conn == nil {
-		conn, err = pgx.Connect(pgx.ConnConfig{
-			Host:     config.Host,
-			Port:     config.Port,
-			User:     config.User,
-			Password: config.Password,
-			Database: config.Dbname,
-		}) // TODO create config/db_config.go file with these constants
-		if err != nil {
-			return nil, err
-		}
+	if pool == nil {
+		pool, err = connectDB(ctx)
+		return pool, err
 	}
-	return conn, nil
+	return pool, nil
 }
 
-func CreateTables() error {
-	conn, err := ConnectDB()
+func connectDB(ctx context.Context) (*pgxpool.Pool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	return pgxpool.New(ctx, URL)
+}
+
+func CreateTables(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	pool, err := GetDB(ctx)
 	query, err := os.ReadFile("./config/table.sql")
 	if err != nil {
 		return err
 	}
-	_, err = conn.Exec(string(query))
+	_, err = pool.Exec(ctx, string(query))
 	if err != nil {
 		return err
 	}

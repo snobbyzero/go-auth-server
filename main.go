@@ -13,25 +13,24 @@ import (
 )
 
 func main() {
-	log.Println("Try to connect to DB")
-	conn, err := database.ConnectDB()
+	ctx := context.Background()
+
+	pool, err := database.GetDB(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println("Connected to DB")
-	log.Println("Ping DB")
 
-	if err := conn.Ping(context.Background()); err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		log.Fatalln(err)
 	}
 
-	if err := database.CreateTables(); err != nil {
+	if err := database.CreateTables(ctx); err != nil {
 		log.Fatalln(err)
 	}
 
-	defer conn.Close()
+	defer pool.Close()
 
-	authController := controllers.NewAuthController()
+	authController := controllers.NewAuthController(ctx)
 	router := mux.NewRouter()
 	//router.StrictSlash(true)
 	router.HandleFunc("/auth", authController.AuthHandler).Methods(http.MethodPost)
